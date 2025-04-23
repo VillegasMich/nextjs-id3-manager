@@ -1,123 +1,116 @@
 import Link from "next/link"
 import { Facebook, Twitter, Instagram, Youtube, Music } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 
 export function Footer() {
   return (
     <footer className="w-full bg-background border-t">
-      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
+      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {/* Brand and description */}
-          <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-2">
             <Link href="/" className="flex items-center gap-2">
-              <Music className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">MusicManager</span>
+              <Music className="h-5 w-5 text-primary" />
+              <span className="text-lg font-bold">MusicManager</span>
             </Link>
-            <p className="text-sm text-muted-foreground">
-              Your all-in-one platform for managing and discovering music.
-            </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-3 mt-1">
               <Link href="#" className="text-muted-foreground hover:text-primary">
-                <Facebook className="h-5 w-5" />
+                <Facebook className="h-4 w-4" />
                 <span className="sr-only">Facebook</span>
               </Link>
               <Link href="#" className="text-muted-foreground hover:text-primary">
-                <Twitter className="h-5 w-5" />
+                <Twitter className="h-4 w-4" />
                 <span className="sr-only">Twitter</span>
               </Link>
               <Link href="#" className="text-muted-foreground hover:text-primary">
-                <Instagram className="h-5 w-5" />
+                <Instagram className="h-4 w-4" />
                 <span className="sr-only">Instagram</span>
               </Link>
               <Link href="#" className="text-muted-foreground hover:text-primary">
-                <Youtube className="h-5 w-5" />
+                <Youtube className="h-4 w-4" />
                 <span className="sr-only">YouTube</span>
               </Link>
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="flex flex-col space-y-4">
-            <h3 className="text-sm font-medium">Explore</h3>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Discover
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Charts
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              New Releases
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Genres
-            </Link>
-          </div>
-
-          {/* Account links */}
-          <div className="flex flex-col space-y-4">
-            <h3 className="text-sm font-medium">Account</h3>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Profile
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Settings
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Subscription
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Download App
-            </Link>
+          {/* Quick links - first column */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div>
+              <h3 className="text-xs font-medium mb-1">Explore</h3>
+              <div className="space-y-1">
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Discover
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Charts
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  New Releases
+                </Link>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xs font-medium mb-1">Account</h3>
+              <div className="space-y-1">
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Profile
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Settings
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Subscription
+                </Link>
+              </div>
+            </div>
           </div>
 
           {/* Help links */}
-          <div className="flex flex-col space-y-4">
-            <h3 className="text-sm font-medium">Help</h3>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Support Center
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Community
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              FAQs
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-primary">
-              Contact Us
-            </Link>
-          </div>
-
-          {/* Newsletter */}
-          <div className="flex flex-col space-y-4 sm:col-span-2 md:col-span-1">
-            <h3 className="text-sm font-medium">Stay Updated</h3>
-            <p className="text-sm text-muted-foreground">Subscribe to our newsletter for updates and new releases.</p>
-            <div className="flex space-x-2">
-              <Input type="email" placeholder="Your email" className="max-w-[220px]" />
-              <Button variant="outline" size="sm">
-                Subscribe
-              </Button>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            <div>
+              <h3 className="text-xs font-medium mb-1">Help</h3>
+              <div className="space-y-1">
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Support
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Community
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Contact Us
+                </Link>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xs font-medium mb-1">Legal</h3>
+              <div className="space-y-1">
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Privacy
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Terms
+                </Link>
+                <Link href="#" className="block text-xs text-muted-foreground hover:text-primary">
+                  Cookies
+                </Link>
+              </div>
             </div>
           </div>
         </div>
 
-        <Separator className="my-8" />
+        <Separator className="my-4" />
 
         <div className="flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} MusicManager. All rights reserved.
-          </p>
-          <div className="flex space-x-4 mt-4 sm:mt-0">
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} MusicManager</p>
+          <div className="flex space-x-3 mt-2 sm:mt-0">
             <Link href="#" className="text-xs text-muted-foreground hover:text-primary">
-              Privacy Policy
+              Privacy
             </Link>
             <Link href="#" className="text-xs text-muted-foreground hover:text-primary">
-              Terms of Service
+              Terms
             </Link>
             <Link href="#" className="text-xs text-muted-foreground hover:text-primary">
-              Cookie Policy
+              Cookies
             </Link>
           </div>
         </div>
@@ -125,3 +118,4 @@ export function Footer() {
     </footer>
   )
 }
+

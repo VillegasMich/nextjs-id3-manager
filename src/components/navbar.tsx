@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { ModeToggle } from "./mode-toggle"
 
 const routes = [
   {
@@ -50,6 +51,7 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <ModeToggle />
           <Avatar className="h-8 w-8">
             <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
             <AvatarFallback>
@@ -86,6 +88,6 @@ export function Navbar() {
           </Sheet>
         </div>
       </div>
-    </nav>
+    </nav >
   )
 }
