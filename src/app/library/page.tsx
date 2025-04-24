@@ -5,57 +5,212 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Clock, Filter, Play, Search, SortAsc, SortDesc } from "lucide-react"
+import { Columns, Filter, Play, Search, SortAsc, SortDesc } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { mockSongs } from "@/util/MockData"
 import { SongMetadata } from "@/dto/SongMetadata"
+import { Combobox } from "@/components/ui/combobox"
+import { ColumnConfig } from "@/dto/ColumnConfig"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Checkbox } from "@/components/ui/checkbox"
 
 
-const getUniqueValues = (data: SongMetadata[], key: keyof SongMetadata) => {
-  return [...new Set(data.map((item) => item[key]))]
+const allColumns: ColumnConfig[] = [
+  { key: "title", label: "Title", category: "basic", defaultVisible: true },
+  {
+    key: "artists",
+    label: "Artists",
+    category: "basic",
+    defaultVisible: true,
+    render: (artists: string[]) => artists.join(", "),
+  },
+  { key: "albumArtist", label: "Album Artist", category: "basic", defaultVisible: false },
+  {
+    key: "albums",
+    label: "Albums",
+    category: "basic",
+    defaultVisible: true,
+    render: (albums: string[]) => albums.join(", "),
+  },
+  {
+    key: "years",
+    label: "Years",
+    category: "basic",
+    defaultVisible: true,
+    render: (years: number[]) => years.join(", "),
+  },
+  {
+    key: "genres",
+    label: "Genres",
+    category: "basic",
+    defaultVisible: true,
+    render: (genres: string[]) => (
+      <div className="flex flex-wrap gap-1">
+        {genres.map((genre, index) => (
+          <Badge key={index} variant="outline">
+            {genre}
+          </Badge>
+        ))}
+      </div>
+    ),
+  },
+  { key: "trackNumber", label: "Track #", category: "basic", defaultVisible: false },
+  { key: "discNumber", label: "Disc #", category: "basic", defaultVisible: false },
+
+  { key: "duration", label: "Duration", category: "technical", defaultVisible: true },
+  { key: "bitrate", label: "Bitrate", category: "technical", defaultVisible: false },
+  { key: "sampleRate", label: "Sample Rate", category: "technical", defaultVisible: false },
+  { key: "channels", label: "Channels", category: "technical", defaultVisible: false },
+  { key: "encoder", label: "Encoder", category: "technical", defaultVisible: false },
+  { key: "fileSize", label: "File Size", category: "technical", defaultVisible: false },
+
+  {
+    key: "composers",
+    label: "Composers",
+    category: "additional",
+    defaultVisible: false,
+    render: (composers: string[]) => composers.join(", "),
+  },
+  {
+    key: "conductors",
+    label: "Conductors",
+    category: "additional",
+    defaultVisible: false,
+    render: (conductors: string[]) => conductors.join(", "),
+  },
+  { key: "publisher", label: "Publisher", category: "additional", defaultVisible: false },
+  { key: "copyright", label: "Copyright", category: "additional", defaultVisible: false },
+  { key: "isrc", label: "ISRC", category: "additional", defaultVisible: false },
+  { key: "bpm", label: "BPM", category: "additional", defaultVisible: false },
+  { key: "key", label: "Key", category: "additional", defaultVisible: false },
+  { key: "mood", label: "Mood", category: "additional", defaultVisible: false },
+  { key: "language", label: "Language", category: "additional", defaultVisible: false },
+
+  { key: "comments", label: "Comments", category: "custom", defaultVisible: false },
+  { key: "lyrics", label: "Lyrics", category: "custom", defaultVisible: false },
+
+  { key: "paths", label: "File Path", category: "file", defaultVisible: false, render: (paths: string[]) => paths[0] },
+  { key: "lastModified", label: "Modified", category: "file", defaultVisible: false },
+  { key: "playCount", label: "Play Count", category: "file", defaultVisible: false },
+  {
+    key: "rating",
+    label: "Rating",
+    category: "file",
+    defaultVisible: false,
+    render: (rating: number) => "★".repeat(rating) + "☆".repeat(5 - rating),
+  },
+]
+
+const getAllUniqueValues = (data: SongMetadata[], key: keyof SongMetadata) => {
+  const allValues = data.flatMap((item) => item[key])
+  return [...new Set(allValues)]
 }
 
 export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedGenre, setSelectedGenre] = useState<string | null>(null)
-  const [selectedArtist, setSelectedArtist] = useState<string | null>(null)
-  const [selectedYear, setSelectedYear] = useState<number | null>(null)
-  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null)
+  const [selectedGenre, setSelectedGenre] = useState<string>("")
+  const [selectedArtist, setSelectedArtist] = useState<string>("")
+  const [selectedYear, setSelectedYear] = useState<string>("")
   const [sortField, setSortField] = useState<keyof SongMetadata>("title")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [currentPage, setCurrentPage] = useState(1)
+  const [visibleColumns, setVisibleColumns] = useState<Set<keyof SongMetadata>>(
+    new Set(allColumns.filter((col) => col.defaultVisible).map((col) => col.key)),
+  )
+  const [isColumnDialogOpen, setIsColumnDialogOpen] = useState(false)
   const itemsPerPage = 20
 
-  const genres = getUniqueValues(mockSongs, "genre") as string[]
-  const artists = getUniqueValues(mockSongs, "artist") as string[]
-  const years = getUniqueValues(mockSongs, "year") as number[]
-  const albums = getUniqueValues(mockSongs, "album") as string[]
+  // Get unique values for filters from arrays
+  const genres = getAllUniqueValues(mockSongs, "genres") as string[]
+  const artists = getAllUniqueValues(mockSongs, "artists") as string[]
+  const years = getAllUniqueValues(mockSongs, "years") as number[]
 
+  // Prepare options for comboboxes
+  const genreOptions = [{ value: "", label: "All Genres" }, ...genres.map((genre) => ({ value: genre, label: genre }))]
+  const artistOptions = [
+    { value: "", label: "All Artists" },
+    ...artists.map((artist) => ({ value: artist, label: artist })),
+  ]
+  const yearOptions = [
+    { value: "", label: "All Years" },
+    ...years.sort((a, b) => b - a).map((year) => ({ value: year.toString(), label: year.toString() })),
+  ]
+
+  // Toggle column visibility
+  const toggleColumn = (key: keyof SongMetadata) => {
+    const newVisibleColumns = new Set(visibleColumns)
+    if (newVisibleColumns.has(key)) {
+      newVisibleColumns.delete(key)
+    } else {
+      newVisibleColumns.add(key)
+    }
+    setVisibleColumns(newVisibleColumns)
+  }
+
+  // Toggle all columns in a category
+  const toggleCategory = (category: string, checked: boolean) => {
+    const columnsInCategory = allColumns.filter((col) => col.category === category).map((col) => col.key)
+    const newVisibleColumns = new Set(visibleColumns)
+
+    if (checked) {
+      columnsInCategory.forEach((key) => newVisibleColumns.add(key))
+    } else {
+      columnsInCategory.forEach((key) => newVisibleColumns.delete(key))
+    }
+
+    setVisibleColumns(newVisibleColumns)
+  }
+
+  // Check if all columns in a category are visible
+  const isCategoryChecked = (category: string) => {
+    const columnsInCategory = allColumns.filter((col) => col.category === category).map((col) => col.key)
+    return columnsInCategory.every((key) => visibleColumns.has(key))
+  }
+
+  // Reset to default columns
+  const resetToDefaultColumns = () => {
+    setVisibleColumns(new Set(allColumns.filter((col) => col.defaultVisible).map((col) => col.key)))
+  }
+
+  // Filter songs based on search and filters
   const filteredSongs = mockSongs
     .filter((song) => {
       const matchesSearch =
         searchQuery === "" ||
         song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        song.album.toLowerCase().includes(searchQuery.toLowerCase())
+        song.artists.some((artist) => artist.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        song.albums.some((album) => album.toLowerCase().includes(searchQuery.toLowerCase()))
 
-      const matchesGenre = selectedGenre === null || song.genre === selectedGenre
-      const matchesArtist = selectedArtist === null || song.artist === selectedArtist
-      const matchesYear = selectedYear === null || song.year === selectedYear
-      const matcherAlbum = selectedAlbum === null || song.album === selectedAlbum
+      const matchesGenre = selectedGenre === "" || song.genres.includes(selectedGenre)
+      const matchesArtist = selectedArtist === "" || song.artists.includes(selectedArtist)
+      const matchesYear = selectedYear === "" || song.years.some((year) => year.toString() === selectedYear)
 
-      return matchesSearch && matchesGenre && matchesArtist && matchesYear && matcherAlbum
+      return matchesSearch && matchesGenre && matchesArtist && matchesYear
     })
     .sort((a, b) => {
       const fieldA = a[sortField]
       const fieldB = b[sortField]
 
-      if (fieldA < fieldB) return sortDirection === "asc" ? -1 : 1
-      if (fieldA > fieldB) return sortDirection === "asc" ? 1 : -1
-      return 0
+      // Handle different types of fields
+      if (Array.isArray(fieldA) && Array.isArray(fieldB)) {
+        // For array fields, sort by first element
+        const valueA = fieldA.length > 0 ? fieldA[0] : ""
+        const valueB = fieldB.length > 0 ? fieldB[0] : ""
+
+        if (typeof valueA === "string" && typeof valueB === "string") {
+          return sortDirection === "asc" ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA)
+        } else {
+          return sortDirection === "asc" ? Number(valueA) - Number(valueB) : Number(valueB) - Number(valueA)
+        }
+      } else if (typeof fieldA === "string" && typeof fieldB === "string") {
+        return sortDirection === "asc" ? fieldA.localeCompare(fieldB) : fieldB.localeCompare(fieldA)
+      } else {
+        // For numeric and other fields
+        return sortDirection === "asc" ? Number(fieldA) - Number(fieldB) : Number(fieldB) - Number(fieldA)
+      }
     })
 
   // Calculate pagination
@@ -74,7 +229,7 @@ export default function LibraryPage() {
     setSearchQuery("")
     setSelectedGenre("")
     setSelectedArtist("")
-    setSelectedYear(null)
+    setSelectedYear("")
     setCurrentPage(1)
   }
 
@@ -91,7 +246,6 @@ export default function LibraryPage() {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages))
   }
 
-  // Toggle sort direction
   const handleSort = (field: keyof SongMetadata) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc")
@@ -99,6 +253,11 @@ export default function LibraryPage() {
       setSortField(field)
       setSortDirection("asc")
     }
+  }
+
+  // Get visible columns in order
+  const getVisibleColumnsInOrder = () => {
+    return allColumns.filter((col) => visibleColumns.has(col.key))
   }
 
   return (
@@ -119,6 +278,181 @@ export default function LibraryPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+
+              {/* Column Selector Dialog */}
+              <Dialog open={isColumnDialogOpen} onOpenChange={setIsColumnDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon" title="Select columns">
+                    <Columns className="h-4 w-4" />
+                    <span className="sr-only">Select columns</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Select Columns to Display</DialogTitle>
+                  </DialogHeader>
+                  <ScrollArea className="h-[60vh] mt-4">
+                    <div className="space-y-6 pr-4">
+                      {/* Basic Metadata Category */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id="basic-category"
+                            checked={isCategoryChecked("basic")}
+                            onCheckedChange={(checked) => toggleCategory("basic", !!checked)}
+                          />
+                          <label htmlFor="basic-category" className="text-sm font-medium">
+                            Basic Metadata
+                          </label>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {allColumns
+                            .filter((col) => col.category === "basic")
+                            .map((column) => (
+                              <div key={column.key.toString()} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                />
+                                <label htmlFor={`col-${column.key}`} className="text-sm">
+                                  {column.label}
+                                </label>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Technical Metadata Category */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id="technical-category"
+                            checked={isCategoryChecked("technical")}
+                            onCheckedChange={(checked) => toggleCategory("technical", !!checked)}
+                          />
+                          <label htmlFor="technical-category" className="text-sm font-medium">
+                            Technical Metadata
+                          </label>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {allColumns
+                            .filter((col) => col.category === "technical")
+                            .map((column) => (
+                              <div key={column.key.toString()} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                />
+                                <label htmlFor={`col-${column.key}`} className="text-sm">
+                                  {column.label}
+                                </label>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Additional Metadata Category */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id="additional-category"
+                            checked={isCategoryChecked("additional")}
+                            onCheckedChange={(checked) => toggleCategory("additional", !!checked)}
+                          />
+                          <label htmlFor="additional-category" className="text-sm font-medium">
+                            Additional Metadata
+                          </label>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {allColumns
+                            .filter((col) => col.category === "additional")
+                            .map((column) => (
+                              <div key={column.key.toString()} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                />
+                                <label htmlFor={`col-${column.key}`} className="text-sm">
+                                  {column.label}
+                                </label>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Tags Category */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id="custom-category"
+                            checked={isCategoryChecked("custom")}
+                            onCheckedChange={(checked) => toggleCategory("custom", !!checked)}
+                          />
+                          <label htmlFor="custom-category" className="text-sm font-medium">
+                            Custom Tags
+                          </label>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {allColumns
+                            .filter((col) => col.category === "custom")
+                            .map((column) => (
+                              <div key={column.key.toString()} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                />
+                                <label htmlFor={`col-${column.key}`} className="text-sm">
+                                  {column.label}
+                                </label>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+
+                      {/* File Information Category */}
+                      <div>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <Checkbox
+                            id="file-category"
+                            checked={isCategoryChecked("file")}
+                            onCheckedChange={(checked) => toggleCategory("file", !!checked)}
+                          />
+                          <label htmlFor="file-category" className="text-sm font-medium">
+                            File Information
+                          </label>
+                        </div>
+                        <div className="ml-6 space-y-1">
+                          {allColumns
+                            .filter((col) => col.category === "file")
+                            .map((column) => (
+                              <div key={column.key.toString()} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumn(column.key)}
+                                />
+                                <label htmlFor={`col-${column.key}`} className="text-sm">
+                                  {column.label}
+                                </label>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                  <div className="flex justify-between mt-4">
+                    <Button variant="outline" onClick={resetToDefaultColumns}>
+                      Reset to Default
+                    </Button>
+                    <Button onClick={() => setIsColumnDialogOpen(false)}>Apply</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="icon">
@@ -136,75 +470,35 @@ export default function LibraryPage() {
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Genre:</span>
-              <Select value={selectedGenre || ""} onValueChange={(value) => setSelectedGenre(value || null)}>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="All Genres" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genres</SelectItem>
-                  {genres.map((genre) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={genreOptions}
+                value={selectedGenre}
+                onChange={setSelectedGenre}
+                placeholder="All Genres"
+                width="w-[150px]"
+              />
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Artist:</span>
-              <Select value={selectedArtist || ""} onValueChange={(value) => setSelectedArtist(value || null)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Artists" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Artists</SelectItem>
-                  {artists.map((artist) => (
-                    <SelectItem key={artist} value={artist}>
-                      {artist}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Album:</span>
-              <Select value={selectedAlbum || ""} onValueChange={(value) => setSelectedAlbum(value || null)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Albums" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Albums</SelectItem>
-                  {albums.map((album) => (
-                    <SelectItem key={album} value={album}>
-                      {album}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={artistOptions}
+                value={selectedArtist}
+                onChange={setSelectedArtist}
+                placeholder="All Artists"
+                width="w-[180px]"
+              />
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Year:</span>
-              <Select
-                value={selectedYear?.toString() || ""}
-                onValueChange={(value) => setSelectedYear(value ? Number.parseInt(value) : null)}
-              >
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="All Years" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Years</SelectItem>
-                  {years
-                    .sort((a, b) => b - a)
-                    .map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={yearOptions}
+                value={selectedYear}
+                onChange={setSelectedYear}
+                placeholder="All Years"
+                width="w-[120px]"
+              />
             </div>
 
             {(selectedGenre || selectedArtist || selectedYear || searchQuery) && (
@@ -214,57 +508,34 @@ export default function LibraryPage() {
             )}
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[40px]"></TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort("title")}>
-                    <div className="flex items-center gap-1">
-                      Title
-                      {sortField === "title" &&
-                        (sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />)}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort("artist")}>
-                    <div className="flex items-center gap-1">
-                      Artist
-                      {sortField === "artist" &&
-                        (sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />)}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort("album")}>
-                    <div className="flex items-center gap-1">
-                      Album
-                      {sortField === "album" &&
-                        (sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />)}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => handleSort("genre")}>
-                    <div className="flex items-center gap-1">
-                      Genre
-                      {sortField === "genre" &&
-                        (sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />)}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden sm:table-cell" onClick={() => handleSort("year")}>
-                    <div className="flex items-center gap-1">
-                      Year
-                      {sortField === "year" &&
-                        (sortDirection === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />)}
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Clock className="h-3 w-3" />
-                    </div>
-                  </TableHead>
+                  {getVisibleColumnsInOrder().map((column) => (
+                    <TableHead
+                      key={column.key.toString()}
+                      className="cursor-pointer whitespace-nowrap"
+                      onClick={() => handleSort(column.key)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {column.label}
+                        {sortField === column.key &&
+                          (sortDirection === "asc" ? (
+                            <SortAsc className="h-3 w-3" />
+                          ) : (
+                            <SortDesc className="h-3 w-3" />
+                          ))}
+                      </div>
+                    </TableHead>
+                  ))}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredSongs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="h-24 text-center">
+                    <TableCell colSpan={getVisibleColumnsInOrder().length + 1} className="h-24 text-center">
                       No songs found matching your filters.
                     </TableCell>
                   </TableRow>
@@ -277,14 +548,15 @@ export default function LibraryPage() {
                           <span className="sr-only">Play</span>
                         </Button>
                       </TableCell>
-                      <TableCell className="font-medium">{song.title}</TableCell>
-                      <TableCell>{song.artist}</TableCell>
-                      <TableCell className="hidden md:table-cell">{song.album}</TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        <Badge variant="outline">{song.genre}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{song.year}</TableCell>
-                      <TableCell className="text-right">{song.duration}</TableCell>
+                      {getVisibleColumnsInOrder().map((column) => (
+                        <TableCell key={column.key.toString()} className="whitespace-nowrap">
+                          {column.render
+                            ? column.render(song[column.key] as never)
+                            : song[column.key] !== undefined
+                              ? String(song[column.key])
+                              : "—"}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   ))
                 )}

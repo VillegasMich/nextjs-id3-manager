@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Music, Library, User, Menu } from "lucide-react"
+import { Music, Library, User, Menu, Upload } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,11 @@ const routes = [
     label: "Library",
     icon: Library,
     href: "/library",
+  },
+  {
+    label: "Upload",
+    icon: Upload,
+    href: "/upload",
   },
 ]
 
