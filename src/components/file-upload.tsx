@@ -20,9 +20,6 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     if (files && files.length > 0) {
       const file = files[0]
       setSelectedFile(file)
-      if (onUpload) {
-        onUpload(file)
-      }
     }
   }
 
@@ -52,10 +49,6 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           type: file.type,
           lastModified: new Date(file.lastModified).toLocaleString(),
         })
-
-        if (onUpload) {
-          onUpload(file)
-        }
       }
     }
   }
@@ -64,6 +57,12 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     setSelectedFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
+    }
+  }
+
+  const handleUpload = () => {
+    if (selectedFile && onUpload) {
+      onUpload(selectedFile)
     }
   }
 
@@ -88,27 +87,32 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           </div>
         </div>
       ) : (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 p-2 rounded-full">
-                  <FileMusic className="h-6 w-6 text-primary" />
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <FileMusic className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium truncate max-w-[200px] sm:max-w-[300px] md:max-w-full">
+                      {selectedFile.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium truncate max-w-[200px] sm:max-w-[300px] md:max-w-full">
-                    {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                </div>
+                <Button variant="ghost" size="icon" onClick={clearSelectedFile}>
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Remove file</span>
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" onClick={clearSelectedFile}>
-                <X className="h-4 w-4" />
-                <span className="sr-only">Remove file</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          <div className="flex justify-end">
+            <Button onClick={handleUpload}>Upload to Server</Button>
+          </div>
+        </div>
       )}
     </div>
   )
