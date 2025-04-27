@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
 import { isLoggedIn } from "@/lib/auth"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
+import axios from "axios"
 
 
 const allColumns: ColumnConfig[] = [
@@ -119,12 +120,40 @@ export default function LibraryPage() {
   const [sortField, setSortField] = useState<keyof SongMetadata>("title")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [currentPage, setCurrentPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState<Set<keyof SongMetadata>>(
     new Set(allColumns.filter((col) => col.defaultVisible).map((col) => col.key)),
   )
   const [isColumnDialogOpen, setIsColumnDialogOpen] = useState(false)
   const router = useRouter()
   const itemsPerPage = 20
+
+  useEffect(() => {
+    async function fetchSongs() {
+      try {
+        const serverUrl = process.env.NEXT_PUBLIC_GETBYUSER_SERVER_URL
+        if (!serverUrl) {
+          console.error(
+            "Server URL not configured. Please set NEXT_PUBLIC_GETBYUSER_SERVER_URL in your environment variables.",
+          )
+          return
+        }
+        setIsLoading(true)
+        const token = localStorage.getItem('token')
+        const response = await axios.get(serverUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        })
+        console.log("Songs:", response.data)
+      } catch (err) {
+        console.error("Error fetching user songs:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchSongs()
+  }, [])
 
   // Get unique values for filters from arrays
   const genres = getAllUniqueValues(mockSongs, "genres") as string[]
@@ -542,33 +571,47 @@ export default function LibraryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSongs.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={getVisibleColumnsInOrder().length + 1} className="h-24 text-center">
-                      No songs found matching your filters.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  currentSongs.map((song) => (
-                    <TableRow key={song.id} className="cursor-pointer hover:bg-muted/50">
+                {isLoading ? (
+                  Array.from({ length: 10 }).map((_, index) => (
+                    <TableRow key={`skeleton-${index}`}>
                       <TableCell className="w-[40px]">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Play className="h-4 w-4" />
-                          <span className="sr-only">Play</span>
-                        </Button>
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
                       </TableCell>
-                      {getVisibleColumnsInOrder().map((column) => (
-                        <TableCell key={column.key.toString()} className="whitespace-nowrap">
-                          {column.render
-                            ? column.render(song[column.key] as never)
-                            : song[column.key] !== undefined
-                              ? String(song[column.key])
-                              : "—"}
+                      {getVisibleColumnsInOrder().map((_column, colIndex) => (
+                        <TableCell key={`skeleton-cell-${index}-${colIndex}`} className="whitespace-nowrap">
+                          <div className="h-4 bg-muted rounded animate-pulse w-[80px]" />
                         </TableCell>
                       ))}
                     </TableRow>
                   ))
-                )}
+                ) :
+                  filteredSongs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={getVisibleColumnsInOrder().length + 1} className="h-24 text-center">
+                        No songs found matching your filters.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentSongs.map((song) => (
+                      <TableRow key={song.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell className="w-[40px]">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Play className="h-4 w-4" />
+                            <span className="sr-only">Play</span>
+                          </Button>
+                        </TableCell>
+                        {getVisibleColumnsInOrder().map((column) => (
+                          <TableCell key={column.key.toString()} className="whitespace-nowrap">
+                            {column.render
+                              ? column.render(song[column.key] as never)
+                              : song[column.key] !== undefined
+                                ? String(song[column.key])
+                                : "—"}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  )}
               </TableBody>
             </Table>
           </div>

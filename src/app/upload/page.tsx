@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { isLoggedIn } from "@/lib/auth"
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 
 export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false)
@@ -39,19 +39,18 @@ export default function UploadPage() {
     try {
       setIsUploading(true)
       setUploadStatus(null)
+      const token = localStorage.getItem('token')
 
-      // Send the file to the server
       const response = await axios.post(serverUrl, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`
         },
         onUploadProgress: (progressEvent) => {
-          // You can use this to show upload progress if needed
           const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1))
           console.log(`Upload progress: ${percentCompleted}%`)
         },
       })
-
       console.log("Upload successful:", response.data)
       setUploadStatus({
         success: true,
