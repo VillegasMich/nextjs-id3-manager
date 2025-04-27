@@ -16,6 +16,8 @@ import { ColumnConfig } from "@/dto/ColumnConfig"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Checkbox } from "@/components/ui/checkbox"
+import { isLoggedIn } from "@/lib/auth"
+import { useRouter } from "next/router"
 
 
 const allColumns: ColumnConfig[] = [
@@ -121,6 +123,7 @@ export default function LibraryPage() {
     new Set(allColumns.filter((col) => col.defaultVisible).map((col) => col.key)),
   )
   const [isColumnDialogOpen, setIsColumnDialogOpen] = useState(false)
+  const router = useRouter()
   const itemsPerPage = 20
 
   // Get unique values for filters from arrays
@@ -218,6 +221,12 @@ export default function LibraryPage() {
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = Math.min(startIndex + itemsPerPage, filteredSongs.length)
   const currentSongs = filteredSongs.slice(startIndex, endIndex)
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push('/auth/login');
+    }
+  }, [router]);
 
   // Reset to first page when filters change
   useEffect(() => {

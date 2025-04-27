@@ -4,9 +4,11 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import axios from "axios"
 import { FileUpload } from "@/components/file-upload"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { isLoggedIn } from "@/lib/auth"
+import { useRouter } from "next/router"
 
 export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false)
@@ -14,6 +16,7 @@ export default function UploadPage() {
     success?: boolean
     message?: string
   } | null>(null)
+  const router = useRouter()
   const handleFileUpload = async (file: File) => {
     console.log("File received in parent component:", file.name)
     const serverUrl = process.env.NEXT_PUBLIC_UPLOAD_SERVER_URL
@@ -66,6 +69,12 @@ export default function UploadPage() {
       setIsUploading(false)
     }
   }
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push('/auth/login');
+    }
+  }, [router]);
 
   return (
     <div className="min-h-screen flex flex-col">
