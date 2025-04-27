@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Music, Library, User, Menu, Upload } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { Music, Library, User, Menu, Upload, LogIn } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ModeToggle } from "./mode-toggle"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import { getUserFromToken, isLoggedIn, logout } from "@/lib/auth"
 
 const routes = [
   {
@@ -27,7 +29,18 @@ const routes = [
 export function Navbar() {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
+  const [user, setUser] = useState<{ username: string } | null>(null);
+  const router = useRouter();
+  useEffect(() => {
+    if (isLoggedIn()) {
+      const userInfo = getUserFromToken();
+      setUser(userInfo ? { username: userInfo.username } : null);
+    }
+  }, []);
+  const handleLogout = () => {
+    logout();
+    router.push('/auth/login');
+  };
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 flex h-16 items-center justify-between">
@@ -57,12 +70,37 @@ export function Navbar() {
 
         <div className="flex items-center gap-4">
           <ModeToggle />
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-            <AvatarFallback>
-              <User className="h-4 w-4" />
-            </AvatarFallback>
-          </Avatar>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
+                    <AvatarFallback>
+                      <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/profile">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/settings">Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="default" size="sm" asChild>
+              <Link href="/auth/login" className="flex items-center gap-2">
+                <LogIn className="h-4 w-4" />
+                Login
+              </Link>
+            </Button>
+          )}
 
           {/* Mobile Menu */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
